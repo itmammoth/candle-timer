@@ -14,6 +14,10 @@ while true; do
   now=$(date +%s)
   mod=$((now % DURATION_SEC))
 
+  if [ "$mod" -eq $((DURATION_SEC - 30)) ]; then
+    say "$MSG_30_SEC" &
+  fi
+
   if [ "$mod" -eq $((DURATION_SEC - 10)) ]; then
     say "$MSG_10_SEC" &
   fi
