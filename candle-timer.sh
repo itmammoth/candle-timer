@@ -14,19 +14,23 @@ while true; do
   now=$(date +%s)
   mod=$((now % DURATION_SEC))
 
-  if [ "$mod" -eq $((DURATION_SEC - 30)) ]; then
+  if [ "$mod" -eq $((DURATION_SEC - 60)) ] && [ -n "$MSG_60_SEC" ]; then
+    say "$MSG_60_SEC" &
+  fi
+
+  if [ "$mod" -eq $((DURATION_SEC - 30)) ] && [ -n "$MSG_30_SEC" ]; then
     say "$MSG_30_SEC" &
   fi
 
-  if [ "$mod" -eq $((DURATION_SEC - 10)) ]; then
+  if [ "$mod" -eq $((DURATION_SEC - 10)) ] && [ -n "$MSG_10_SEC" ]; then
     say "$MSG_10_SEC" &
   fi
 
-  if [ "$mod" -eq $((DURATION_SEC - 5)) ]; then
+  if [ "$mod" -eq $((DURATION_SEC - 5)) ] && [ -n "$MSG_5_SEC" ]; then
     say "$MSG_5_SEC" &
   fi
 
-  if [ "$mod" -eq $((DURATION_SEC - 1)) ]; then
+  if [ "$mod" -eq $((DURATION_SEC - 1)) ] && [ -n "$MSG_CONFIRMED" ]; then
     say "$MSG_CONFIRMED" &
   fi
 
