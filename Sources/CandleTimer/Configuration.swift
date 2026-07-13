@@ -5,6 +5,8 @@ struct TimerConfiguration: Decodable, Equatable {
   let fallback: FallbackConfiguration?
   let periods: [PeriodConfiguration]
 
+  private static let ianaTimeZoneIdentifiers = Set(TimeZone.knownTimeZoneIdentifiers)
+
   private enum CodingKeys: String, CodingKey {
     case timeZone
     case fallback
@@ -15,7 +17,10 @@ struct TimerConfiguration: Decodable, Equatable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     let timeZoneIdentifier = try container.decode(String.self, forKey: .timeZone)
 
-    guard let timeZone = TimeZone(identifier: timeZoneIdentifier) else {
+    guard
+      Self.ianaTimeZoneIdentifiers.contains(timeZoneIdentifier),
+      let timeZone = TimeZone(identifier: timeZoneIdentifier)
+    else {
       throw ConfigurationError.invalidTimeZone(timeZoneIdentifier)
     }
 
@@ -192,13 +197,14 @@ enum SpeechCondition: Decodable, Equatable {
   }
 
   init(from decoder: Decoder) throws {
+    let conditionPath = Self.pathDescription(for: decoder.codingPath)
     let rawContainer = try decoder.container(keyedBy: ConditionKey.self)
     let validKeys = Set(CodingKeys.allCases.map(\.rawValue))
     guard
       rawContainer.allKeys.count == 1,
       rawContainer.allKeys.allSatisfy({ validKeys.contains($0.stringValue) })
     else {
-      throw ConfigurationError.invalidSpeechCondition
+      throw ConfigurationError.invalidSpeechCondition(path: conditionPath)
     }
 
     let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -212,7 +218,7 @@ enum SpeechCondition: Decodable, Equatable {
     ].filter { $0 }.count
 
     guard specifiedConditionCount == 1 else {
-      throw ConfigurationError.invalidSpeechCondition
+      throw ConfigurationError.invalidSpeechCondition(path: conditionPath)
     }
 
     if let secondsBeforeClose {
@@ -222,8 +228,25 @@ enum SpeechCondition: Decodable, Equatable {
     } else if periodStarted == true {
       self = .periodStarted
     } else {
-      throw ConfigurationError.invalidSpeechCondition
+      throw ConfigurationError.invalidSpeechCondition(path: conditionPath)
     }
+  }
+
+  private static func pathDescription(for codingPath: [any CodingKey]) -> String {
+    var result = ""
+
+    for key in codingPath {
+      if let index = key.intValue {
+        result += "[\(index)]"
+      } else {
+        if !result.isEmpty {
+          result += "."
+        }
+        result += key.stringValue
+      }
+    }
+
+    return result.isEmpty ? "rule.when" : result
   }
 }
 
@@ -258,7 +281,7 @@ enum ConfigurationError: LocalizedError, Equatable {
   case overlappingPeriods(periodNumber: Int)
   case invalidDuration(periodNumber: Int)
   case periodDurationNotDivisible(periodNumber: Int)
-  case invalidSpeechCondition
+  case invalidSpeechCondition(path: String)
   case invalidSecondsBeforeClose(periodNumber: Int, ruleNumber: Int, maximum: Int)
 
   var errorDescription: String? {
@@ -285,8 +308,8 @@ enum ConfigurationError: LocalizedError, Equatable {
       "periods[\(periodNumber - 1)].candle.durationMinutes must be a positive integer."
     case .periodDurationNotDivisible(let periodNumber):
       "periods[\(periodNumber - 1)] duration must be divisible by its candle duration."
-    case .invalidSpeechCondition:
-      "Each rule.when must specify exactly one valid condition."
+    case .invalidSpeechCondition(let path):
+      "\(path) must specify exactly one valid condition."
     case .invalidSecondsBeforeClose(let periodNumber, let ruleNumber, let maximum):
       "periods[\(periodNumber - 1)].rules[\(ruleNumber - 1)].when.secondsBeforeClose "
         + "must be between 1 and \(maximum)."

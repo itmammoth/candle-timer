@@ -51,6 +51,19 @@ final class ConfigurationTests: XCTestCase {
     }
   }
 
+  func testRejectsNonIanaTimeZoneIdentifiers() {
+    for identifier in ["GMT+0900", "PST"] {
+      let contents = Self.configuration(
+        timeZone: identifier,
+        periods: Self.period(start: "09:00", end: "09:30", durationMinutes: 1)
+      )
+
+      XCTAssertThrowsError(try TimerConfiguration.parse(contents)) { error in
+        XCTAssertEqual(error as? ConfigurationError, .invalidTimeZone(identifier))
+      }
+    }
+  }
+
   func testRejectsNonPositiveFallbackInterval() {
     let contents =
       """
@@ -183,7 +196,10 @@ final class ConfigurationTests: XCTestCase {
     )
 
     XCTAssertThrowsError(try TimerConfiguration.parse(contents)) { error in
-      XCTAssertEqual(error as? ConfigurationError, .invalidSpeechCondition)
+      XCTAssertEqual(
+        error as? ConfigurationError,
+        .invalidSpeechCondition(path: "periods[0].rules[0].when")
+      )
     }
   }
 
@@ -205,7 +221,10 @@ final class ConfigurationTests: XCTestCase {
     )
 
     XCTAssertThrowsError(try TimerConfiguration.parse(contents)) { error in
-      XCTAssertEqual(error as? ConfigurationError, .invalidSpeechCondition)
+      XCTAssertEqual(
+        error as? ConfigurationError,
+        .invalidSpeechCondition(path: "periods[0].rules[0].when")
+      )
     }
   }
 
@@ -227,7 +246,10 @@ final class ConfigurationTests: XCTestCase {
     )
 
     XCTAssertThrowsError(try TimerConfiguration.parse(contents)) { error in
-      XCTAssertEqual(error as? ConfigurationError, .invalidSpeechCondition)
+      XCTAssertEqual(
+        error as? ConfigurationError,
+        .invalidSpeechCondition(path: "periods[0].rules[0].when")
+      )
     }
   }
 
@@ -249,7 +271,42 @@ final class ConfigurationTests: XCTestCase {
     )
 
     XCTAssertThrowsError(try TimerConfiguration.parse(contents)) { error in
-      XCTAssertEqual(error as? ConfigurationError, .invalidSpeechCondition)
+      XCTAssertEqual(
+        error as? ConfigurationError,
+        .invalidSpeechCondition(path: "periods[0].rules[0].when")
+      )
+    }
+  }
+
+  func testReportsInvalidConditionPathForLaterPeriodAndRule() {
+    let rules =
+      """
+      {
+        "when": { "candleClosed": true },
+        "speak": { "message": "valid" }
+      },
+      {
+        "when": {},
+        "speak": { "message": "invalid" }
+      }
+      """
+    let contents = Self.configuration(
+      periods: [
+        Self.period(start: "09:00", end: "09:30", durationMinutes: 1),
+        Self.period(
+          start: "09:30",
+          end: "10:00",
+          durationMinutes: 1,
+          rules: rules
+        )
+      ].joined(separator: ",")
+    )
+
+    XCTAssertThrowsError(try TimerConfiguration.parse(contents)) { error in
+      XCTAssertEqual(
+        error as? ConfigurationError,
+        .invalidSpeechCondition(path: "periods[1].rules[1].when")
+      )
     }
   }
 

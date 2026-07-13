@@ -94,7 +94,8 @@ are sufficient for building and running the command-line utility.
      If the timer launches outside all periods, it speaks immediately and then
      repeats at that interval.
    - `periods` must be in ascending order and must not overlap. Gaps are
-     allowed and remain silent.
+     allowed. They use `fallback` speech when configured and otherwise remain
+     silent.
    - `start` and `end` use `HH:mm` format. Overnight periods are not supported.
    - Each period must be evenly divisible by its positive
      `candle.durationMinutes` value.
