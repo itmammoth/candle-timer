@@ -15,10 +15,7 @@ struct CandleTimerCommand {
   private static func run() throws {
     let configurationURL = locateConfigurationFile()
     let configuration = try TimerConfiguration.load(from: configurationURL)
-    let schedule = CandleSchedule(
-      durationSeconds: configuration.candleDurationSeconds,
-      announcements: configuration.announcements
-    )
+    let schedule = CandleSchedule(configuration: configuration)
     let runner = CandleTimerRunner(
       schedule: schedule,
       synthesizer: SaySpeechSynthesizer()

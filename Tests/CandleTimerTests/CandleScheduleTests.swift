@@ -1,33 +1,144 @@
+import Foundation
 import XCTest
 @testable import CandleTimer
 
 final class CandleScheduleTests: XCTestCase {
-  func testReturnsMessagesAtExistingNotificationBoundaries() {
-    let announcements = [
-      Announcement(secondsBeforeClose: 60, message: "60"),
-      Announcement(secondsBeforeClose: 30, message: "30"),
-      Announcement(secondsBeforeClose: 10, message: "10"),
-      Announcement(secondsBeforeClose: 5, message: "5"),
-      Announcement(secondsBeforeClose: 1, message: "confirmed")
-    ]
-    let schedule = CandleSchedule(durationSeconds: 300, announcements: announcements)
+  private let schedule = CandleSchedule(
+    configuration: try! TimerConfiguration.parse(ConfigurationTests.validConfiguration)
+  )
 
-    XCTAssertEqual(schedule.announcements(atUnixSecond: 240).map(\.message), ["60"])
-    XCTAssertEqual(schedule.announcements(atUnixSecond: 270).map(\.message), ["30"])
-    XCTAssertEqual(schedule.announcements(atUnixSecond: 290).map(\.message), ["10"])
-    XCTAssertEqual(schedule.announcements(atUnixSecond: 295).map(\.message), ["5"])
-    XCTAssertEqual(schedule.announcements(atUnixSecond: 299).map(\.message), ["confirmed"])
-    XCTAssertTrue(schedule.announcements(atUnixSecond: 300).isEmpty)
+  func testUsesOneMinuteRulesDuringFirstPeriod() {
+    XCTAssertEqual(messages(at: "2026-07-13T00:00:50Z"), ["10秒前"])
+    XCTAssertEqual(messages(at: "2026-07-13T00:00:55Z"), ["5秒前"])
+    XCTAssertEqual(messages(at: "2026-07-13T00:01:00Z"), ["ローソク確定"])
+    XCTAssertTrue(messages(at: "2026-07-13T00:02:00Z").contains("ローソク確定"))
+    XCTAssertFalse(messages(at: "2026-07-13T00:00:00Z").contains("残り1分"))
   }
 
-  func testIgnoresAnnouncementThatExceedsCandleDuration() {
-    let schedule = CandleSchedule(
-      durationSeconds: 30,
-      announcements: [
-        Announcement(secondsBeforeClose: 60, message: "60")
-      ]
+  func testSpeaksCandleCloseBeforePeriodStartAtSwitchBoundary() {
+    XCTAssertEqual(
+      messages(at: "2026-07-13T00:30:00Z"),
+      ["ローソク確定", "9時30分です。3分足に切り替えてください"]
+    )
+  }
+
+  func testUsesThreeMinuteRulesFromPeriodStart() {
+    XCTAssertEqual(messages(at: "2026-07-13T00:32:00Z"), ["残り1分"])
+    XCTAssertEqual(messages(at: "2026-07-13T00:32:30Z"), ["30秒前"])
+    XCTAssertEqual(messages(at: "2026-07-13T00:32:50Z"), ["10秒前"])
+    XCTAssertEqual(messages(at: "2026-07-13T00:32:55Z"), ["5秒前"])
+    XCTAssertEqual(messages(at: "2026-07-13T00:33:00Z"), ["ローソク確定"])
+    XCTAssertEqual(messages(at: "2026-07-13T00:36:00Z"), ["ローソク確定"])
+  }
+
+  func testSpeaksFinalCandleCloseAtPeriodEnd() {
+    XCTAssertEqual(messages(at: "2026-07-13T06:30:00Z"), ["ローソク確定"])
+    XCTAssertTrue(messages(at: "2026-07-13T06:30:01Z").isEmpty)
+  }
+
+  func testDoesNotSpeakOutsideConfiguredPeriods() {
+    XCTAssertTrue(messages(at: "2026-07-12T23:59:59Z").isEmpty)
+    XCTAssertTrue(messages(at: "2026-07-13T07:00:00Z").isEmpty)
+  }
+
+  func testReturnsFallbackOnlyOutsideConfiguredPeriods() {
+    let beforeOpen = schedule.evaluation(
+      atUnixSecond: unixSecond("2026-07-12T23:59:59Z")
+    )
+    let duringMarket = schedule.evaluation(
+      atUnixSecond: unixSecond("2026-07-13T00:00:00Z")
+    )
+    let atClose = schedule.evaluation(
+      atUnixSecond: unixSecond("2026-07-13T06:30:00Z")
     )
 
-    XCTAssertTrue(schedule.announcements(atUnixSecond: 0).isEmpty)
+    XCTAssertEqual(beforeOpen.fallback?.message, "市場がクローズしています")
+    XCTAssertNil(duringMarket.fallback)
+    XCTAssertEqual(atClose.announcements.map(\.message), ["ローソク確定"])
+    XCTAssertEqual(atClose.fallback?.intervalSeconds, 300)
   }
+
+  func testAllowsSilentGapBetweenPeriods() throws {
+    let configuration = try TimerConfiguration.parse(
+      """
+      {
+        "timeZone": "Asia/Tokyo",
+        "periods": [
+          {
+            "start": "09:00",
+            "end": "09:30",
+            "candle": { "durationMinutes": 1 },
+            "rules": [
+              {
+                "when": { "candleClosed": true },
+                "speak": { "message": "first close" }
+              }
+            ]
+          },
+          {
+            "start": "10:00",
+            "end": "10:30",
+            "candle": { "durationMinutes": 1 },
+            "rules": []
+          }
+        ]
+      }
+      """
+    )
+    let gapSchedule = CandleSchedule(configuration: configuration)
+
+    XCTAssertEqual(
+      gapSchedule.announcements(atUnixSecond: unixSecond("2026-07-13T00:30:00Z")).map(\.message),
+      ["first close"]
+    )
+    XCTAssertTrue(
+      gapSchedule.announcements(atUnixSecond: unixSecond("2026-07-13T00:45:00Z")).isEmpty
+    )
+  }
+
+  func testSkipsEmptyMessages() throws {
+    let configuration = try TimerConfiguration.parse(
+      """
+      {
+        "timeZone": "Asia/Tokyo",
+        "periods": [
+          {
+            "start": "09:00",
+            "end": "09:30",
+            "candle": { "durationMinutes": 1 },
+            "rules": [
+              {
+                "when": { "secondsBeforeClose": 10 },
+                "speak": { "message": "" }
+              }
+            ]
+          }
+        ]
+      }
+      """
+    )
+    let emptyMessageSchedule = CandleSchedule(configuration: configuration)
+
+    XCTAssertTrue(
+      emptyMessageSchedule
+        .announcements(atUnixSecond: unixSecond("2026-07-13T00:00:50Z"))
+        .isEmpty
+    )
+  }
+
+  func testAppliesScheduleEveryDay() {
+    XCTAssertEqual(
+      messages(at: "2026-07-14T00:30:00Z"),
+      ["ローソク確定", "9時30分です。3分足に切り替えてください"]
+    )
+  }
+
+  private func messages(at timestamp: String) -> [String] {
+    schedule.announcements(atUnixSecond: unixSecond(timestamp)).map(\.message)
+  }
+}
+
+func unixSecond(_ timestamp: String) -> Int {
+  let formatter = ISO8601DateFormatter()
+  return Int(formatter.date(from: timestamp)!.timeIntervalSince1970)
 }
