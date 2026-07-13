@@ -2,13 +2,13 @@
 
 ## プロジェクト構成
 
-このリポジトリは、macOS向けの小規模なSwift CLIユーティリティです。`Package.swift` にSwift Packageの構成、`Sources/CandleTimer/` にタイマー処理、設定読み込み、音声通知のロジックがあります。`Tests/CandleTimerTests/` には設定と通知境界のテストがあります。`messages.conf.sample` は設定項目の見本です。実行前に、Git管理対象外の `messages.conf` へコピーしてください。`README.md` は利用者向けの導入手順、`LICENSE` はライセンスを記載しています。
+このリポジトリは、macOS向けの小規模なSwift CLIユーティリティです。`Package.swift` にSwift Packageの構成、`Sources/CandleTimer/` にタイマー処理、設定読み込み、音声通知のロジックがあります。`Tests/CandleTimerTests/` には設定と通知境界のテストがあります。`config.json.sample` は設定項目の見本です。実行前に、Git管理対象外の `config.json` へコピーしてください。`README.md` は利用者向けの導入手順、`LICENSE` はライセンスを記載しています。
 
 ## ビルド・テスト・開発用コマンド
 
 外部依存パッケージはありません。ビルドにはSwift 6以降を使用します。
 
-- `cp messages.conf.sample messages.conf`: ローカル設定ファイルを作成します。
+- `cp config.json.sample config.json`: ローカル設定ファイルを作成します。
 - `swift run candle-timer`: タイマーをビルドして起動します。停止するには `Ctrl+C` を押します。
 - `swift build`: デバッグ用の実行ファイルをビルドします。
 - `swift build -c release`: 最適化した実行ファイルをビルドします。
@@ -18,7 +18,7 @@
 
 ## コーディング規約と命名
 
-Swift 6を対象とし、既存の2スペースインデントを維持します。型名にはUpperCamelCase、プロパティとメソッドにはlowerCamelCaseを使用してください。設定キーは互換性のため、`CANDLE_DURATION_MIN`、`MSG_30_SEC` のような大文字のスネークケースを維持します。時刻計算と設定解析は音声出力から分離し、単体テストできる形にしてください。任意メッセージは空の場合に読み上げない既存仕様を維持します。
+Swift 6を対象とし、既存の2スペースインデントを維持します。型名にはUpperCamelCase、プロパティとメソッドにはlowerCamelCaseを使用してください。JSON設定キーにはlowerCamelCaseを使用し、条件は`when`、読み上げ処理は`speak`の下に定義します。時刻計算と設定解析は音声出力から分離し、単体テストできる形にしてください。任意メッセージは空の場合に読み上げない既存仕様を維持します。
 
 ## テスト方針
 

@@ -32,9 +32,9 @@ struct CandleTimerCommand {
       .standardizedFileURL
     let executableCandidate = executableURL
       .deletingLastPathComponent()
-      .appendingPathComponent("messages.conf")
+      .appendingPathComponent("config.json")
     let workingDirectoryCandidate = URL(fileURLWithPath: fileManager.currentDirectoryPath)
-      .appendingPathComponent("messages.conf")
+      .appendingPathComponent("config.json")
 
     if fileManager.fileExists(atPath: executableCandidate.path) {
       return executableCandidate

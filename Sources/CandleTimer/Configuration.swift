@@ -1,11 +1,25 @@
 import Foundation
 
-struct TimerConfiguration: Equatable {
-  let candleDurationMinutes: Int
-  let messages: [Announcement]
+struct TimerConfiguration: Decodable, Equatable {
+  let candle: CandleConfiguration
+  let rules: [SpeechRule]
 
   var candleDurationSeconds: Int {
-    candleDurationMinutes * 60
+    candle.durationMinutes * 60
+  }
+
+  var messages: [Announcement] {
+    rules.enumerated().compactMap { index, rule in
+      guard !rule.speak.message.isEmpty else {
+        return nil
+      }
+
+      return Announcement(
+        key: "rule-\(index + 1)",
+        secondsBeforeClose: rule.when.secondsBeforeClose,
+        message: rule.speak.message
+      )
+    }
   }
 
   static func load(from url: URL) throws -> TimerConfiguration {
@@ -18,94 +32,70 @@ struct TimerConfiguration: Equatable {
   }
 
   static func parse(_ contents: String) throws -> TimerConfiguration {
-    var values: [String: String] = [:]
-
-    for (index, line) in contents.components(separatedBy: .newlines).enumerated() {
-      let trimmedLine = line.trimmingCharacters(in: .whitespaces)
-      guard !trimmedLine.isEmpty, !trimmedLine.hasPrefix("#") else {
-        continue
-      }
-
-      guard let separator = trimmedLine.firstIndex(of: "=") else {
-        throw ConfigurationError.invalidLine(index + 1)
-      }
-
-      let key = trimmedLine[..<separator].trimmingCharacters(in: .whitespaces)
-      let rawValue = trimmedLine[trimmedLine.index(after: separator)...]
-        .trimmingCharacters(in: .whitespaces)
-
-      guard !key.isEmpty else {
-        throw ConfigurationError.invalidLine(index + 1)
-      }
-
-      values[key] = try parseValue(rawValue, lineNumber: index + 1)
+    do {
+      let configuration = try JSONDecoder().decode(
+        TimerConfiguration.self,
+        from: Data(contents.utf8)
+      )
+      try configuration.validate()
+      return configuration
+    } catch let error as ConfigurationError {
+      throw error
+    } catch {
+      throw ConfigurationError.invalidJSON(error.localizedDescription)
     }
+  }
 
-    guard let rawDuration = values["CANDLE_DURATION_MIN"],
-          let duration = Int(rawDuration),
-          duration > 0 else {
+  private func validate() throws {
+    guard candle.durationMinutes > 0 else {
       throw ConfigurationError.invalidDuration
     }
 
-    let definitions = [
-      (key: "MSG_60_SEC", secondsBeforeClose: 60),
-      (key: "MSG_30_SEC", secondsBeforeClose: 30),
-      (key: "MSG_10_SEC", secondsBeforeClose: 10),
-      (key: "MSG_5_SEC", secondsBeforeClose: 5),
-      (key: "MSG_CONFIRMED", secondsBeforeClose: 1)
-    ]
-
-    let messages = definitions.compactMap { definition -> Announcement? in
-      guard let message = values[definition.key], !message.isEmpty else {
-        return nil
+    for (index, rule) in rules.enumerated() {
+      let seconds = rule.when.secondsBeforeClose
+      guard seconds > 0, seconds <= candleDurationSeconds else {
+        throw ConfigurationError.invalidSecondsBeforeClose(
+          ruleNumber: index + 1,
+          maximum: candleDurationSeconds
+        )
       }
-
-      return Announcement(
-        key: definition.key,
-        secondsBeforeClose: definition.secondsBeforeClose,
-        message: message
-      )
     }
-
-    return TimerConfiguration(
-      candleDurationMinutes: duration,
-      messages: messages
-    )
   }
+}
 
-  private static func parseValue(
-    _ rawValue: String,
-    lineNumber: Int
-  ) throws -> String {
-    guard let first = rawValue.first else {
-      return ""
-    }
+struct CandleConfiguration: Decodable, Equatable {
+  let durationMinutes: Int
+}
 
-    if first == "\"" || first == "'" {
-      guard rawValue.count >= 2, rawValue.last == first else {
-        throw ConfigurationError.invalidLine(lineNumber)
-      }
+struct SpeechRule: Decodable, Equatable {
+  let when: SpeechCondition
+  let speak: SpeechAction
+}
 
-      return String(rawValue.dropFirst().dropLast())
-    }
+struct SpeechCondition: Decodable, Equatable {
+  let secondsBeforeClose: Int
+}
 
-    return rawValue
-  }
+struct SpeechAction: Decodable, Equatable {
+  let message: String
 }
 
 enum ConfigurationError: LocalizedError, Equatable {
   case fileNotFound(URL)
-  case invalidLine(Int)
+  case invalidJSON(String)
   case invalidDuration
+  case invalidSecondsBeforeClose(ruleNumber: Int, maximum: Int)
 
   var errorDescription: String? {
     switch self {
     case .fileNotFound(let url):
       "Configuration file '\(url.path)' not found."
-    case .invalidLine(let lineNumber):
-      "Invalid configuration at line \(lineNumber)."
+    case .invalidJSON(let details):
+      "Invalid JSON configuration: \(details)"
     case .invalidDuration:
-      "CANDLE_DURATION_MIN must be a positive integer."
+      "candle.durationMinutes must be a positive integer."
+    case .invalidSecondsBeforeClose(let ruleNumber, let maximum):
+      "rules[\(ruleNumber - 1)].when.secondsBeforeClose must be between 1 and \(maximum)."
     }
   }
 }

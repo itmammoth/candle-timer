@@ -26,17 +26,44 @@ are sufficient for building and running the command-line utility.
 1. Create a local configuration file:
 
    ```bash
-   cp messages.conf.sample messages.conf
+   cp config.json.sample config.json
    ```
 
-2. Edit `messages.conf` to customize the candle duration and messages:
+2. Edit `config.json` to customize the candle duration and speech rules:
 
    ```bash
-   vi messages.conf
+   vi config.json
    ```
 
-   `CANDLE_DURATION_MIN` must be a positive integer. Message values may be
-   empty when an announcement is not needed.
+   Each rule separates its condition under `when` from its speech action under
+   `speak`:
+
+   ```json
+   {
+     "candle": {
+       "durationMinutes": 5
+     },
+     "rules": [
+       {
+         "when": {
+           "secondsBeforeClose": 45
+         },
+         "speak": {
+           "message": "45 seconds remaining"
+         }
+       }
+     ]
+   }
+   ```
+
+   - `candle.durationMinutes` must be a positive integer.
+   - `rules[].when.secondsBeforeClose` must be between 1 and the candle
+     duration in seconds.
+   - `rules[].speak.message` is the text to announce. Empty messages are
+     skipped.
+
+   The file must be valid JSON, so comments and trailing commas are not
+   supported.
 
 3. Build and run the timer:
 
@@ -54,13 +81,13 @@ Create an optimized executable with:
 swift build -c release
 ```
 
-Run it from the repository root so it can find `messages.conf`:
+Run it from the repository root so it can find `config.json`:
 
 ```bash
 .build/release/candle-timer
 ```
 
-Alternatively, place `messages.conf` in the same directory as the compiled
+Alternatively, place `config.json` in the same directory as the compiled
 executable.
 
 ## Tests

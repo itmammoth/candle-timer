@@ -3,49 +3,102 @@ import XCTest
 @testable import CandleTimer
 
 final class ConfigurationTests: XCTestCase {
-  func testParsesExistingConfigurationFormat() throws {
+  func testParsesJSONRules() throws {
     let configuration = try TimerConfiguration.parse(
       """
-      CANDLE_DURATION_MIN=5
-
-      MSG_60_SEC="60 seconds remaining"
-      MSG_30_SEC="30 seconds remaining"
-      MSG_10_SEC="10 seconds remaining"
-      MSG_5_SEC="5 seconds remaining"
-      MSG_CONFIRMED="Candle closed"
+      {
+        "candle": {
+          "durationMinutes": 5
+        },
+        "rules": [
+          {
+            "when": { "secondsBeforeClose": 45 },
+            "speak": { "message": "45秒前" }
+          },
+          {
+            "when": { "secondsBeforeClose": 1 },
+            "speak": { "message": "ローソク足が確定しました" }
+          }
+        ]
+      }
       """
     )
 
-    XCTAssertEqual(configuration.candleDurationMinutes, 5)
+    XCTAssertEqual(configuration.candle.durationMinutes, 5)
     XCTAssertEqual(configuration.candleDurationSeconds, 300)
-    XCTAssertEqual(
-      configuration.messages.map(\.secondsBeforeClose),
-      [60, 30, 10, 5, 1]
-    )
-    XCTAssertEqual(configuration.messages.last?.message, "Candle closed")
+    XCTAssertEqual(configuration.messages.map(\.secondsBeforeClose), [45, 1])
+    XCTAssertEqual(configuration.messages.last?.message, "ローソク足が確定しました")
   }
 
-  func testOmitsEmptyOptionalMessages() throws {
+  func testOmitsRulesWithEmptyMessages() throws {
     let configuration = try TimerConfiguration.parse(
       """
-      CANDLE_DURATION_MIN=3
-      MSG_60_SEC=""
-      MSG_30_SEC="30秒前"
+      {
+        "candle": { "durationMinutes": 3 },
+        "rules": [
+          {
+            "when": { "secondsBeforeClose": 60 },
+            "speak": { "message": "" }
+          },
+          {
+            "when": { "secondsBeforeClose": 30 },
+            "speak": { "message": "30秒前" }
+          }
+        ]
+      }
       """
     )
 
     XCTAssertEqual(configuration.messages.count, 1)
-    XCTAssertEqual(configuration.messages.first?.key, "MSG_30_SEC")
+    XCTAssertEqual(configuration.messages.first?.key, "rule-2")
   }
 
   func testRejectsNonPositiveDuration() {
-    XCTAssertThrowsError(try TimerConfiguration.parse("CANDLE_DURATION_MIN=0")) { error in
+    let contents =
+      """
+      {
+        "candle": { "durationMinutes": 0 },
+        "rules": []
+      }
+      """
+
+    XCTAssertThrowsError(try TimerConfiguration.parse(contents)) { error in
       XCTAssertEqual(error as? ConfigurationError, .invalidDuration)
     }
   }
 
+  func testRejectsSecondsBeforeCloseOutsideCandleDuration() {
+    let contents =
+      """
+      {
+        "candle": { "durationMinutes": 1 },
+        "rules": [
+          {
+            "when": { "secondsBeforeClose": 61 },
+            "speak": { "message": "too early" }
+          }
+        ]
+      }
+      """
+
+    XCTAssertThrowsError(try TimerConfiguration.parse(contents)) { error in
+      XCTAssertEqual(
+        error as? ConfigurationError,
+        .invalidSecondsBeforeClose(ruleNumber: 1, maximum: 60)
+      )
+    }
+  }
+
+  func testRejectsMalformedJSON() {
+    XCTAssertThrowsError(try TimerConfiguration.parse("{ invalid json }")) { error in
+      guard case .invalidJSON = error as? ConfigurationError else {
+        return XCTFail("Expected invalidJSON, got \(error)")
+      }
+    }
+  }
+
   func testReportsMissingFile() {
-    let url = URL(fileURLWithPath: "/tmp/candle-timer-missing.conf")
+    let url = URL(fileURLWithPath: "/tmp/candle-timer-missing.json")
 
     XCTAssertThrowsError(try TimerConfiguration.load(from: url)) { error in
       XCTAssertEqual(error as? ConfigurationError, .fileNotFound(url))
