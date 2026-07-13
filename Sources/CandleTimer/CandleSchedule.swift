@@ -1,5 +1,4 @@
 struct Announcement: Equatable {
-  let key: String
   let secondsBeforeClose: Int
   let message: String
 }

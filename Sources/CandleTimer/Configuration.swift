@@ -8,14 +8,13 @@ struct TimerConfiguration: Decodable, Equatable {
     candle.durationMinutes * 60
   }
 
-  var messages: [Announcement] {
-    rules.enumerated().compactMap { index, rule in
+  var announcements: [Announcement] {
+    rules.compactMap { rule in
       guard !rule.speak.message.isEmpty else {
         return nil
       }
 
       return Announcement(
-        key: "rule-\(index + 1)",
         secondsBeforeClose: rule.when.secondsBeforeClose,
         message: rule.speak.message
       )

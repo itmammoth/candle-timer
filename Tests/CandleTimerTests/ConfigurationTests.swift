@@ -26,8 +26,8 @@ final class ConfigurationTests: XCTestCase {
 
     XCTAssertEqual(configuration.candle.durationMinutes, 5)
     XCTAssertEqual(configuration.candleDurationSeconds, 300)
-    XCTAssertEqual(configuration.messages.map(\.secondsBeforeClose), [45, 1])
-    XCTAssertEqual(configuration.messages.last?.message, "ローソク足が確定しました")
+    XCTAssertEqual(configuration.announcements.map(\.secondsBeforeClose), [45, 1])
+    XCTAssertEqual(configuration.announcements.last?.message, "ローソク足が確定しました")
   }
 
   func testOmitsRulesWithEmptyMessages() throws {
@@ -49,8 +49,8 @@ final class ConfigurationTests: XCTestCase {
       """
     )
 
-    XCTAssertEqual(configuration.messages.count, 1)
-    XCTAssertEqual(configuration.messages.first?.key, "rule-2")
+    XCTAssertEqual(configuration.announcements.count, 1)
+    XCTAssertEqual(configuration.announcements.first?.message, "30秒前")
   }
 
   func testRejectsNonPositiveDuration() {
@@ -98,7 +98,8 @@ final class ConfigurationTests: XCTestCase {
   }
 
   func testReportsMissingFile() {
-    let url = URL(fileURLWithPath: "/tmp/candle-timer-missing.json")
+    let url = FileManager.default.temporaryDirectory
+      .appendingPathComponent("candle-timer-missing-\(UUID().uuidString).json")
 
     XCTAssertThrowsError(try TimerConfiguration.load(from: url)) { error in
       XCTAssertEqual(error as? ConfigurationError, .fileNotFound(url))

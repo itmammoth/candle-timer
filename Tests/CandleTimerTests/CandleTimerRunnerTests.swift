@@ -8,8 +8,8 @@ final class CandleTimerRunnerTests: XCTestCase {
       schedule: CandleSchedule(
         durationSeconds: 300,
         announcements: [
-          Announcement(key: "60", secondsBeforeClose: 60, message: "60 seconds"),
-          Announcement(key: "30", secondsBeforeClose: 30, message: "30 seconds")
+          Announcement(secondsBeforeClose: 60, message: "60 seconds"),
+          Announcement(secondsBeforeClose: 30, message: "30 seconds")
         ]
       ),
       synthesizer: synthesizer
