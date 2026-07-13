@@ -32,6 +32,7 @@ final class CandleTimerRunner: NSObject {
   private let schedule: CandleSchedule
   private let synthesizer: SpeechSynthesizing
   private var lastEvaluatedSecond: Int?
+  private var fallbackAnchorSecond: Int?
 
   init(schedule: CandleSchedule, synthesizer: SpeechSynthesizing) {
     self.schedule = schedule
@@ -56,11 +57,46 @@ final class CandleTimerRunner: NSObject {
       return
     }
 
-    for announcement in schedule.announcements(atUnixSecond: currentSecond) {
+    let evaluation = schedule.evaluation(atUnixSecond: currentSecond)
+
+    for announcement in evaluation.announcements {
       synthesizer.speak(announcement.message)
     }
 
+    handleFallback(
+      evaluation.fallback,
+      regularAnnouncementCount: evaluation.announcements.count,
+      atUnixSecond: currentSecond
+    )
+
     lastEvaluatedSecond = currentSecond
+  }
+
+  private func handleFallback(
+    _ fallback: FallbackAnnouncement?,
+    regularAnnouncementCount: Int,
+    atUnixSecond currentSecond: Int
+  ) {
+    guard let fallback else {
+      fallbackAnchorSecond = nil
+      return
+    }
+
+    guard let anchorSecond = fallbackAnchorSecond else {
+      fallbackAnchorSecond = currentSecond
+
+      if regularAnnouncementCount == 0 {
+        synthesizer.speak(fallback.message)
+      }
+      return
+    }
+
+    guard currentSecond - anchorSecond >= fallback.intervalSeconds else {
+      return
+    }
+
+    synthesizer.speak(fallback.message)
+    fallbackAnchorSecond = currentSecond
   }
 
   @objc private func handleTimer() {

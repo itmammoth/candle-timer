@@ -1,47 +1,134 @@
 {
-  "candle": {
-    "durationMinutes": 5
+  "timeZone": "Asia/Tokyo",
+  "fallback": {
+    "intervalMinutes": 5,
+    "speak": {
+      "message": "市場がクローズしています"
+    }
   },
-  "rules": [
+  "periods": [
     {
-      "when": {
-        "secondsBeforeClose": 60
+      "start": "08:45",
+      "end": "09:00",
+      "candle": {
+        "durationMinutes": 5
       },
-      "speak": {
-        "message": "60 seconds remaining"
-      }
+      "rules": [
+        {
+          "when": {
+            "periodStarted": true
+          },
+          "speak": {
+            "message": "8時45分です。先物が始まりました"
+          }
+        },
+        {
+          "when": {
+            "candleClosed": true
+          },
+          "speak": {
+            "message": "５分経過"
+          }
+        }
+      ]
     },
     {
-      "when": {
-        "secondsBeforeClose": 30
+      "start": "09:00",
+      "end": "09:30",
+      "candle": {
+        "durationMinutes": 1
       },
-      "speak": {
-        "message": "30 seconds remaining"
-      }
+      "rules": [
+        {
+          "when": {
+            "periodStarted": true
+          },
+          "speak": {
+            "message": "9時です。１分足にきりかえてください。"
+          }
+        },
+        {
+          "when": {
+            "secondsBeforeClose": 10
+          },
+          "speak": {
+            "message": "10秒前"
+          }
+        },
+        {
+          "when": {
+            "secondsBeforeClose": 5
+          },
+          "speak": {
+            "message": "5秒前"
+          }
+        },
+        {
+          "when": {
+            "candleClosed": true
+          },
+          "speak": {
+            "message": "ローソク確定"
+          }
+        }
+      ]
     },
     {
-      "when": {
-        "secondsBeforeClose": 10
+      "start": "09:30",
+      "end": "15:30",
+      "candle": {
+        "durationMinutes": 3
       },
-      "speak": {
-        "message": "10 seconds remaining"
-      }
-    },
-    {
-      "when": {
-        "secondsBeforeClose": 5
-      },
-      "speak": {
-        "message": "5 seconds remaining"
-      }
-    },
-    {
-      "when": {
-        "secondsBeforeClose": 1
-      },
-      "speak": {
-        "message": "Candle closed"
-      }
+      "rules": [
+        {
+          "when": {
+            "periodStarted": true
+          },
+          "speak": {
+            "message": "9時30分です。3分足に切り替えてください"
+          }
+        },
+        {
+          "when": {
+            "secondsBeforeClose": 60
+          },
+          "speak": {
+            "message": "残り1分"
+          }
+        },
+        {
+          "when": {
+            "secondsBeforeClose": 30
+          },
+          "speak": {
+            "message": "30秒前"
+          }
+        },
+        {
+          "when": {
+            "secondsBeforeClose": 10
+          },
+          "speak": {
+            "message": "10秒前"
+          }
+        },
+        {
+          "when": {
+            "secondsBeforeClose": 5
+          },
+          "speak": {
+            "message": "5秒前"
+          }
+        },
+        {
+          "when": {
+            "candleClosed": true
+          },
+          "speak": {
+            "message": "ローソク確定"
+          }
+        }
+      ]
     }
   ]
 }

@@ -1,15 +1,16 @@
 # Candle Timer
 
-A small macOS command-line utility written in Swift. It announces the time
-remaining before each candle closes using the system speech synthesizer.
+A small macOS command-line utility written in Swift. It uses the system speech
+synthesizer to announce candle timing according to time-of-day periods.
 
-It can announce at:
+Each period can use a different candle duration and announce at:
 
 - 60 seconds remaining
 - 30 seconds remaining
 - 10 seconds remaining
 - 5 seconds remaining
-- Candle close (one second before the boundary)
+- The exact candle close
+- The start of a configured period
 
 Empty messages are skipped.
 
@@ -29,41 +30,94 @@ are sufficient for building and running the command-line utility.
    cp config.json.sample config.json
    ```
 
-2. Edit `config.json` to customize the candle duration and speech rules:
+2. Edit `config.json` to customize the time periods, candle durations, and
+   speech rules:
 
    ```bash
    vi config.json
    ```
 
-   Each rule separates its condition under `when` from its speech action under
-   `speak`:
+   Each period has its own candle duration and rules. Each rule separates its
+   condition under `when` from its speech action under `speak`:
 
    ```json
    {
-     "candle": {
-       "durationMinutes": 5
+     "timeZone": "Asia/Tokyo",
+     "fallback": {
+       "intervalMinutes": 5,
+       "speak": {
+         "message": "Market is closed"
+       }
      },
-     "rules": [
+     "periods": [
        {
-         "when": {
-           "secondsBeforeClose": 45
+         "start": "09:00",
+         "end": "09:30",
+         "candle": {
+           "durationMinutes": 1
          },
-         "speak": {
-           "message": "45 seconds remaining"
-         }
+         "rules": [
+           {
+             "when": {
+               "secondsBeforeClose": 10
+             },
+             "speak": {
+               "message": "10 seconds remaining"
+             }
+           },
+           {
+             "when": {
+               "candleClosed": true
+             },
+             "speak": {
+               "message": "Candle closed"
+             }
+           }
+         ]
+       },
+       {
+         "start": "09:30",
+         "end": "15:30",
+         "candle": {
+           "durationMinutes": 3
+         },
+         "rules": []
        }
      ]
    }
    ```
 
-   - `candle.durationMinutes` must be a positive integer.
-   - `rules[].when.secondsBeforeClose` must be between 1 and the candle
-     duration in seconds.
+   - `timeZone` must be a valid IANA time zone identifier, such as
+     `Asia/Tokyo`.
+   - Optional `fallback` speech applies whenever the current time is outside
+     every configured period. `intervalMinutes` must be a positive integer.
+     If the timer launches outside all periods, it speaks immediately and then
+     repeats at that interval.
+   - `periods` must be in ascending order and must not overlap. Gaps are
+     allowed and remain silent.
+   - `start` and `end` use `HH:mm` format. Overnight periods are not supported.
+   - Each period must be evenly divisible by its positive
+     `candle.durationMinutes` value.
+   - Each `rules[].when` must contain exactly one condition:
+     - `secondsBeforeClose` announces before every candle close and must be
+       between 1 and the candle duration in seconds.
+     - `candleClosed: true` announces at the exact candle close, including the
+       end of the period.
+     - `periodStarted: true` announces once when the period starts.
    - `rules[].speak.message` is the text to announce. Empty messages are
      skipped.
 
+   When one period ends exactly as another starts, candle-close messages from
+   the ending period are spoken before period-start messages from the new
+   period. When the final period ends with a regular announcement, fallback
+   speech starts one full fallback interval later. The schedule is applied
+   every day, including weekends.
+
    The file must be valid JSON, so comments and trailing commas are not
    supported.
+
+   Earlier versions used top-level `candle` and `rules` values. That format is
+   no longer supported; replace it with `timeZone` and `periods` as shown above.
 
 3. Build and run the timer:
 
