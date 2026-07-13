@@ -23,6 +23,15 @@ final class CandleTimerRunnerTests: XCTestCase {
   }
 }
 
+final class SaySpeechSynthesizerTests: XCTestCase {
+  func testTreatsMessageBeginningWithHyphenAsSpeechText() {
+    XCTAssertEqual(
+      SaySpeechSynthesizer.commandArguments(for: "-f/tmp/message.txt"),
+      ["--", "-f/tmp/message.txt"]
+    )
+  }
+}
+
 private final class RecordingSpeechSynthesizer: SpeechSynthesizing {
   private(set) var messages: [String] = []
 

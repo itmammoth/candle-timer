@@ -11,7 +11,7 @@ final class SaySpeechSynthesizer: SpeechSynthesizing {
     queue.async {
       let process = Process()
       process.executableURL = URL(fileURLWithPath: "/usr/bin/say")
-      process.arguments = [message]
+      process.arguments = Self.commandArguments(for: message)
 
       do {
         try process.run()
@@ -21,6 +21,10 @@ final class SaySpeechSynthesizer: SpeechSynthesizing {
         FileHandle.standardError.write(Data(output.utf8))
       }
     }
+  }
+
+  static func commandArguments(for message: String) -> [String] {
+    ["--", message]
   }
 }
 
