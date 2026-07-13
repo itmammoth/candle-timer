@@ -62,6 +62,41 @@ final class CandleTimerRunnerTests: XCTestCase {
       ["ローソク確定", "市場がクローズしています"]
     )
   }
+
+  func testResetsFallbackIntervalWhenEnteringAndLeavingPeriod() throws {
+    let configuration =
+      """
+      {
+        "timeZone": "Asia/Tokyo",
+        "fallback": {
+          "intervalMinutes": 5,
+          "speak": { "message": "市場がクローズしています" }
+        },
+        "periods": [
+          {
+            "start": "09:00",
+            "end": "09:01",
+            "candle": { "durationMinutes": 1 },
+            "rules": []
+          }
+        ]
+      }
+      """
+    let synthesizer = RecordingSpeechSynthesizer()
+    let runner = CandleTimerRunner(
+      schedule: CandleSchedule(configuration: try TimerConfiguration.parse(configuration)),
+      synthesizer: synthesizer
+    )
+
+    runner.tick(atUnixSecond: unixSecond("2026-07-12T23:59:30Z"))
+    runner.tick(atUnixSecond: unixSecond("2026-07-13T00:00:00Z"))
+    runner.tick(atUnixSecond: unixSecond("2026-07-13T00:01:00Z"))
+
+    XCTAssertEqual(
+      synthesizer.messages,
+      ["市場がクローズしています", "市場がクローズしています"]
+    )
+  }
 }
 
 final class SaySpeechSynthesizerTests: XCTestCase {
