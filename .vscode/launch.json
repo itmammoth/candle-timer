@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:candle-timer}",
+            "name": "Debug candle-timer",
+            "target": "candle-timer",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug candle-timer"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:candle-timer}",
+            "name": "Release candle-timer",
+            "target": "candle-timer",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release candle-timer"
+        }
+    ]
+}

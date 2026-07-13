@@ -1,0 +1,47 @@
+{
+  "candle": {
+    "durationMinutes": 5
+  },
+  "rules": [
+    {
+      "when": {
+        "secondsBeforeClose": 60
+      },
+      "speak": {
+        "message": "60 seconds remaining"
+      }
+    },
+    {
+      "when": {
+        "secondsBeforeClose": 30
+      },
+      "speak": {
+        "message": "30 seconds remaining"
+      }
+    },
+    {
+      "when": {
+        "secondsBeforeClose": 10
+      },
+      "speak": {
+        "message": "10 seconds remaining"
+      }
+    },
+    {
+      "when": {
+        "secondsBeforeClose": 5
+      },
+      "speak": {
+        "message": "5 seconds remaining"
+      }
+    },
+    {
+      "when": {
+        "secondsBeforeClose": 1
+      },
+      "speak": {
+        "message": "Candle closed"
+      }
+    }
+  ]
+}

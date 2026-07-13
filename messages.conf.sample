@@ -1,7 +1,0 @@
-CANDLE_DURATION_MIN=5
-
-MSG_60_SEC="60 seconds remaining"
-MSG_30_SEC="30 seconds remaining"
-MSG_10_SEC="10 seconds remaining"
-MSG_5_SEC="5 seconds remaining"
-MSG_CONFIRMED="Candle closed"

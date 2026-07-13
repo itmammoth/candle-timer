@@ -1,0 +1,41 @@
+import XCTest
+@testable import CandleTimer
+
+final class CandleTimerRunnerTests: XCTestCase {
+  func testSpeaksEachBoundaryOnlyOncePerSecond() {
+    let synthesizer = RecordingSpeechSynthesizer()
+    let runner = CandleTimerRunner(
+      schedule: CandleSchedule(
+        durationSeconds: 300,
+        announcements: [
+          Announcement(secondsBeforeClose: 60, message: "60 seconds"),
+          Announcement(secondsBeforeClose: 30, message: "30 seconds")
+        ]
+      ),
+      synthesizer: synthesizer
+    )
+
+    runner.tick(atUnixSecond: 240)
+    runner.tick(atUnixSecond: 240)
+    runner.tick(atUnixSecond: 270)
+
+    XCTAssertEqual(synthesizer.messages, ["60 seconds", "30 seconds"])
+  }
+}
+
+final class SaySpeechSynthesizerTests: XCTestCase {
+  func testTreatsMessageBeginningWithHyphenAsSpeechText() {
+    XCTAssertEqual(
+      SaySpeechSynthesizer.commandArguments(for: "-f/tmp/message.txt"),
+      ["--", "-f/tmp/message.txt"]
+    )
+  }
+}
+
+private final class RecordingSpeechSynthesizer: SpeechSynthesizing {
+  private(set) var messages: [String] = []
+
+  func speak(_ message: String) {
+    messages.append(message)
+  }
+}
