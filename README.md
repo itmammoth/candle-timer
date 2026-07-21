@@ -52,7 +52,7 @@ are sufficient for building and running the command-line utility.
      "periods": [
        {
          "start": "09:00",
-         "end": "10:00",
+         "end": "10:45",
          "candle": {
            "durationMinutes": 1
          },
@@ -76,7 +76,7 @@ are sufficient for building and running the command-line utility.
          ]
        },
        {
-         "start": "10:00",
+         "start": "10:45",
          "end": "15:30",
          "candle": {
            "durationMinutes": 3
