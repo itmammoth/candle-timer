@@ -23,16 +23,16 @@ final class ConfigurationTests: XCTestCase {
     XCTAssertEqual(configuration.periods.first?.rules.last?.speak.message, "５分経過")
     XCTAssertEqual(
       configuration.periods[1].end.secondsSinceMidnight,
-      10 * 60 * 60 + 45 * 60
+      11 * 60 * 60 + 30 * 60
     )
     XCTAssertEqual(
       configuration.periods[2].start.secondsSinceMidnight,
-      10 * 60 * 60 + 45 * 60
+      11 * 60 * 60 + 30 * 60
     )
     XCTAssertEqual(configuration.periods[2].candle.durationMinutes, 3)
     XCTAssertEqual(
       configuration.periods[2].rules.first?.speak.message,
-      "10時45分です。3分足に切り替えてください"
+      "11時30分です。3分足に切り替えてください"
     )
   }
 
