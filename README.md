@@ -128,6 +128,11 @@ are sufficient for building and running the command-line utility.
 
 The process continues running until you press `Ctrl+C`.
 
+To compensate for the short delay before macOS starts playing speech, scheduled
+announcements are submitted to the speech synthesizer one second before their
+configured time. This applies consistently to candle countdowns, candle closes,
+period starts, and the transition to fallback speech.
+
 ## Release build
 
 Create an optimized executable with:
