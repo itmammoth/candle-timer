@@ -29,6 +29,8 @@ final class SaySpeechSynthesizer: SpeechSynthesizing {
 }
 
 final class CandleTimerRunner: NSObject {
+  private static let speechLeadSeconds = 1
+
   private let schedule: CandleSchedule
   private let synthesizer: SpeechSynthesizing
   private var lastEvaluatedSecond: Int?
@@ -57,7 +59,9 @@ final class CandleTimerRunner: NSObject {
       return
     }
 
-    let evaluation = schedule.evaluation(atUnixSecond: currentSecond)
+    let evaluation = schedule.evaluation(
+      atUnixSecond: currentSecond + Self.speechLeadSeconds
+    )
 
     for announcement in evaluation.announcements {
       synthesizer.speak(announcement.message)
