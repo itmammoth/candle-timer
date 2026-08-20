@@ -34,7 +34,7 @@
     },
     {
       "start": "09:00",
-      "end": "11:30",
+      "end": "10:30",
       "candle": {
         "durationMinutes": 1
       },
@@ -74,7 +74,7 @@
       ]
     },
     {
-      "start": "11:30",
+      "start": "10:30",
       "end": "15:30",
       "candle": {
         "durationMinutes": 3
@@ -85,7 +85,7 @@
             "periodStarted": true
           },
           "speak": {
-            "message": "11時30分です。3分足に切り替えてください"
+            "message": "10時30分です。3分足に切り替えてください"
           }
         },
         {

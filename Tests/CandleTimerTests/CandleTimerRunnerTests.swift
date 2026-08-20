@@ -10,7 +10,7 @@ final class CandleTimerRunnerTests: XCTestCase {
       ),
       synthesizer: synthesizer
     )
-    let switchSecond = unixSecond("2026-07-13T00:30:00Z")
+    let switchSecond = unixSecond("2026-07-13T01:30:00Z")
 
     runner.tick(atUnixSecond: switchSecond - 1)
     runner.tick(atUnixSecond: switchSecond - 1)
@@ -18,7 +18,7 @@ final class CandleTimerRunnerTests: XCTestCase {
 
     XCTAssertEqual(
       synthesizer.messages,
-      ["ローソク確定", "9時30分です。3分足に切り替えてください"]
+      ["ローソク確定", "10時30分です。3分足に切り替えてください"]
     )
   }
 
