@@ -17,18 +17,18 @@ final class CandleScheduleTests: XCTestCase {
 
   func testSpeaksCandleCloseBeforePeriodStartAtSwitchBoundary() {
     XCTAssertEqual(
-      messages(at: "2026-07-13T00:30:00Z"),
-      ["ローソク確定", "9時30分です。3分足に切り替えてください"]
+      messages(at: "2026-07-13T01:30:00Z"),
+      ["ローソク確定", "10時30分です。3分足に切り替えてください"]
     )
   }
 
   func testUsesThreeMinuteRulesFromPeriodStart() {
-    XCTAssertEqual(messages(at: "2026-07-13T00:32:00Z"), ["残り1分"])
-    XCTAssertEqual(messages(at: "2026-07-13T00:32:30Z"), ["30秒前"])
-    XCTAssertEqual(messages(at: "2026-07-13T00:32:50Z"), ["10秒前"])
-    XCTAssertEqual(messages(at: "2026-07-13T00:32:55Z"), ["5秒前"])
-    XCTAssertEqual(messages(at: "2026-07-13T00:33:00Z"), ["ローソク確定"])
-    XCTAssertEqual(messages(at: "2026-07-13T00:36:00Z"), ["ローソク確定"])
+    XCTAssertEqual(messages(at: "2026-07-13T01:32:00Z"), ["残り1分"])
+    XCTAssertEqual(messages(at: "2026-07-13T01:32:30Z"), ["30秒前"])
+    XCTAssertEqual(messages(at: "2026-07-13T01:32:50Z"), ["10秒前"])
+    XCTAssertEqual(messages(at: "2026-07-13T01:32:55Z"), ["5秒前"])
+    XCTAssertEqual(messages(at: "2026-07-13T01:33:00Z"), ["ローソク確定"])
+    XCTAssertEqual(messages(at: "2026-07-13T01:36:00Z"), ["ローソク確定"])
   }
 
   func testSpeaksFinalCandleCloseAtPeriodEnd() {
@@ -128,8 +128,8 @@ final class CandleScheduleTests: XCTestCase {
 
   func testAppliesScheduleEveryDay() {
     XCTAssertEqual(
-      messages(at: "2026-07-14T00:30:00Z"),
-      ["ローソク確定", "9時30分です。3分足に切り替えてください"]
+      messages(at: "2026-07-14T01:30:00Z"),
+      ["ローソク確定", "10時30分です。3分足に切り替えてください"]
     )
   }
 

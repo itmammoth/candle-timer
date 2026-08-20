@@ -23,16 +23,16 @@ final class ConfigurationTests: XCTestCase {
     XCTAssertEqual(configuration.periods.first?.rules.last?.speak.message, "５分経過")
     XCTAssertEqual(
       configuration.periods[1].end.secondsSinceMidnight,
-      11 * 60 * 60 + 30 * 60
+      10 * 60 * 60 + 30 * 60
     )
     XCTAssertEqual(
       configuration.periods[2].start.secondsSinceMidnight,
-      11 * 60 * 60 + 30 * 60
+      10 * 60 * 60 + 30 * 60
     )
     XCTAssertEqual(configuration.periods[2].candle.durationMinutes, 3)
     XCTAssertEqual(
       configuration.periods[2].rules.first?.speak.message,
-      "11時30分です。3分足に切り替えてください"
+      "10時30分です。3分足に切り替えてください"
     )
   }
 
@@ -44,7 +44,7 @@ final class ConfigurationTests: XCTestCase {
     XCTAssertEqual(configuration.fallback?.speak.message, "市場がクローズしています")
     XCTAssertEqual(configuration.periods.count, 2)
     XCTAssertEqual(configuration.periods[0].start.secondsSinceMidnight, 9 * 60 * 60)
-    XCTAssertEqual(configuration.periods[0].end.secondsSinceMidnight, 9 * 60 * 60 + 30 * 60)
+    XCTAssertEqual(configuration.periods[0].end.secondsSinceMidnight, 10 * 60 * 60 + 30 * 60)
     XCTAssertEqual(configuration.periods[0].candle.durationMinutes, 1)
     XCTAssertEqual(
       configuration.periods[0].rules.map(\.when),
@@ -388,7 +388,7 @@ final class ConfigurationTests: XCTestCase {
       "periods": [
         {
           "start": "09:00",
-          "end": "09:30",
+          "end": "10:30",
           "candle": { "durationMinutes": 1 },
           "rules": [
             {
@@ -406,13 +406,13 @@ final class ConfigurationTests: XCTestCase {
           ]
         },
         {
-          "start": "09:30",
+          "start": "10:30",
           "end": "15:30",
           "candle": { "durationMinutes": 3 },
           "rules": [
             {
               "when": { "periodStarted": true },
-              "speak": { "message": "9時30分です。3分足に切り替えてください" }
+              "speak": { "message": "10時30分です。3分足に切り替えてください" }
             },
             {
               "when": { "secondsBeforeClose": 60 },
