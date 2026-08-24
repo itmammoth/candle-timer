@@ -13,12 +13,12 @@ final class ConfigurationTests: XCTestCase {
     )
 
     XCTAssertEqual(configuration.fallback?.intervalMinutes, 5)
+    XCTAssertEqual(configuration.periods.count, 3)
     XCTAssertEqual(
       configuration.periods.first?.start.secondsSinceMidnight,
       8 * 60 * 60 + 45 * 60
     )
     XCTAssertEqual(configuration.periods.first?.candle.durationMinutes, 5)
-    XCTAssertTrue(configuration.periods.dropFirst().allSatisfy { $0.candle.durationMinutes == 3 })
     XCTAssertEqual(
       configuration.periods.first?.rules.map(\.when),
       [
@@ -33,11 +33,37 @@ final class ConfigurationTests: XCTestCase {
     XCTAssertEqual(configuration.periods.first?.rules.last?.speak.message, "５分経過")
     XCTAssertEqual(
       configuration.periods[1].end.secondsSinceMidnight,
+      9 * 60 * 60 + 30 * 60
+    )
+    XCTAssertEqual(configuration.periods[1].candle.durationMinutes, 1)
+    XCTAssertEqual(
+      configuration.periods[1].rules.first?.speak.message,
+      "9時です。1分足にきりかえてください。"
+    )
+    XCTAssertEqual(
+      configuration.periods[2].start.secondsSinceMidnight,
+      9 * 60 * 60 + 30 * 60
+    )
+    XCTAssertEqual(
+      configuration.periods[2].end.secondsSinceMidnight,
       15 * 60 * 60 + 30 * 60
     )
-    XCTAssertEqual(configuration.periods[1].candle.durationMinutes, 3)
+    XCTAssertEqual(configuration.periods[2].candle.durationMinutes, 3)
+    XCTAssertEqual(
+      configuration.periods[2].rules.first?.speak.message,
+      "9:30になりました。3分足に切り替えてください"
+    )
     XCTAssertEqual(
       configuration.periods[1].rules.map(\.when),
+      [
+        .periodStarted,
+        .secondsBeforeClose(10),
+        .secondsBeforeClose(5),
+        .candleClosed,
+      ]
+    )
+    XCTAssertEqual(
+      configuration.periods[2].rules.map(\.when),
       [
         .periodStarted,
         .secondsBeforeClose(60),
