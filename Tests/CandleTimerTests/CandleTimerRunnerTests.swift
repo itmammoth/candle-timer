@@ -2,7 +2,7 @@ import XCTest
 @testable import CandleTimer
 
 final class CandleTimerRunnerTests: XCTestCase {
-  func testSpeaksAllBoundaryMessagesOneSecondEarlyOnceAndInOrder() throws {
+  func testSpeaksBoundaryMessageOneSecondEarlyOnce() throws {
     let synthesizer = RecordingSpeechSynthesizer()
     let runner = CandleTimerRunner(
       schedule: CandleSchedule(
@@ -10,15 +10,15 @@ final class CandleTimerRunnerTests: XCTestCase {
       ),
       synthesizer: synthesizer
     )
-    let switchSecond = unixSecond("2026-07-13T01:30:00Z")
+    let candleCloseSecond = unixSecond("2026-07-13T01:30:00Z")
 
-    runner.tick(atUnixSecond: switchSecond - 1)
-    runner.tick(atUnixSecond: switchSecond - 1)
-    runner.tick(atUnixSecond: switchSecond)
+    runner.tick(atUnixSecond: candleCloseSecond - 1)
+    runner.tick(atUnixSecond: candleCloseSecond - 1)
+    runner.tick(atUnixSecond: candleCloseSecond)
 
     XCTAssertEqual(
       synthesizer.messages,
-      ["ローソク確定", "10時30分です。3分足に切り替えてください"]
+      ["ローソク確定"]
     )
   }
 

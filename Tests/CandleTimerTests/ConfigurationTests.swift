@@ -18,21 +18,25 @@ final class ConfigurationTests: XCTestCase {
       8 * 60 * 60 + 45 * 60
     )
     XCTAssertEqual(configuration.periods.first?.candle.durationMinutes, 5)
+    XCTAssertTrue(configuration.periods.dropFirst().allSatisfy { $0.candle.durationMinutes == 3 })
     XCTAssertEqual(configuration.periods.first?.rules.first?.when, .periodStarted)
     XCTAssertEqual(configuration.periods.first?.rules.last?.when, .candleClosed)
     XCTAssertEqual(configuration.periods.first?.rules.last?.speak.message, "５分経過")
     XCTAssertEqual(
       configuration.periods[1].end.secondsSinceMidnight,
-      10 * 60 * 60 + 30 * 60
+      15 * 60 * 60 + 30 * 60
     )
+    XCTAssertEqual(configuration.periods[1].candle.durationMinutes, 3)
     XCTAssertEqual(
-      configuration.periods[2].start.secondsSinceMidnight,
-      10 * 60 * 60 + 30 * 60
-    )
-    XCTAssertEqual(configuration.periods[2].candle.durationMinutes, 3)
-    XCTAssertEqual(
-      configuration.periods[2].rules.first?.speak.message,
-      "10時30分です。3分足に切り替えてください"
+      configuration.periods[1].rules.map(\.when),
+      [
+        .periodStarted,
+        .secondsBeforeClose(60),
+        .secondsBeforeClose(30),
+        .secondsBeforeClose(10),
+        .secondsBeforeClose(5),
+        .candleClosed,
+      ]
     )
   }
 
@@ -42,15 +46,21 @@ final class ConfigurationTests: XCTestCase {
     XCTAssertEqual(configuration.timeZone.identifier, "Asia/Tokyo")
     XCTAssertEqual(configuration.fallback?.intervalMinutes, 5)
     XCTAssertEqual(configuration.fallback?.speak.message, "市場がクローズしています")
-    XCTAssertEqual(configuration.periods.count, 2)
+    XCTAssertEqual(configuration.periods.count, 1)
     XCTAssertEqual(configuration.periods[0].start.secondsSinceMidnight, 9 * 60 * 60)
-    XCTAssertEqual(configuration.periods[0].end.secondsSinceMidnight, 10 * 60 * 60 + 30 * 60)
-    XCTAssertEqual(configuration.periods[0].candle.durationMinutes, 1)
+    XCTAssertEqual(configuration.periods[0].end.secondsSinceMidnight, 15 * 60 * 60 + 30 * 60)
+    XCTAssertTrue(configuration.periods.allSatisfy { $0.candle.durationMinutes == 3 })
     XCTAssertEqual(
       configuration.periods[0].rules.map(\.when),
-      [.secondsBeforeClose(10), .secondsBeforeClose(5), .candleClosed]
+      [
+        .periodStarted,
+        .secondsBeforeClose(60),
+        .secondsBeforeClose(30),
+        .secondsBeforeClose(10),
+        .secondsBeforeClose(5),
+        .candleClosed,
+      ]
     )
-    XCTAssertEqual(configuration.periods[1].rules.first?.when, .periodStarted)
   }
 
   func testRejectsInvalidTimeZone() {
@@ -388,31 +398,12 @@ final class ConfigurationTests: XCTestCase {
       "periods": [
         {
           "start": "09:00",
-          "end": "10:30",
-          "candle": { "durationMinutes": 1 },
-          "rules": [
-            {
-              "when": { "secondsBeforeClose": 10 },
-              "speak": { "message": "10秒前" }
-            },
-            {
-              "when": { "secondsBeforeClose": 5 },
-              "speak": { "message": "5秒前" }
-            },
-            {
-              "when": { "candleClosed": true },
-              "speak": { "message": "ローソク確定" }
-            }
-          ]
-        },
-        {
-          "start": "10:30",
           "end": "15:30",
           "candle": { "durationMinutes": 3 },
           "rules": [
             {
               "when": { "periodStarted": true },
-              "speak": { "message": "10時30分です。3分足に切り替えてください" }
+              "speak": { "message": "9時です。3分足にきりかえてください。" }
             },
             {
               "when": { "secondsBeforeClose": 60 },
