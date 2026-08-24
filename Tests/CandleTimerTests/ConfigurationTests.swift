@@ -19,8 +19,17 @@ final class ConfigurationTests: XCTestCase {
     )
     XCTAssertEqual(configuration.periods.first?.candle.durationMinutes, 5)
     XCTAssertTrue(configuration.periods.dropFirst().allSatisfy { $0.candle.durationMinutes == 3 })
-    XCTAssertEqual(configuration.periods.first?.rules.first?.when, .periodStarted)
-    XCTAssertEqual(configuration.periods.first?.rules.last?.when, .candleClosed)
+    XCTAssertEqual(
+      configuration.periods.first?.rules.map(\.when),
+      [
+        .periodStarted,
+        .secondsBeforeClose(60),
+        .secondsBeforeClose(30),
+        .secondsBeforeClose(10),
+        .secondsBeforeClose(5),
+        .candleClosed,
+      ]
+    )
     XCTAssertEqual(configuration.periods.first?.rules.last?.speak.message, "５分経過")
     XCTAssertEqual(
       configuration.periods[1].end.secondsSinceMidnight,

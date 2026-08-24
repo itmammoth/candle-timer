@@ -7,6 +7,32 @@ final class CandleScheduleTests: XCTestCase {
     configuration: try! TimerConfiguration.parse(ConfigurationTests.validConfiguration)
   )
 
+  func testUsesCountdownRulesBetweenEightFortyFiveAndNine() throws {
+    let repositoryRoot = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+    let configuration = try TimerConfiguration.load(
+      from: repositoryRoot.appendingPathComponent("config.json.sample")
+    )
+    let sampleSchedule = CandleSchedule(configuration: configuration)
+
+    func sampleMessages(at timestamp: String) -> [String] {
+      sampleSchedule.announcements(atUnixSecond: unixSecond(timestamp)).map(\.message)
+    }
+
+    XCTAssertEqual(sampleMessages(at: "2026-07-12T23:49:00Z"), ["残り1分"])
+    XCTAssertEqual(sampleMessages(at: "2026-07-12T23:49:30Z"), ["30秒前"])
+    XCTAssertEqual(sampleMessages(at: "2026-07-12T23:49:50Z"), ["10秒前"])
+    XCTAssertEqual(sampleMessages(at: "2026-07-12T23:49:55Z"), ["5秒前"])
+    XCTAssertEqual(sampleMessages(at: "2026-07-12T23:54:00Z"), ["残り1分"])
+    XCTAssertEqual(sampleMessages(at: "2026-07-12T23:59:55Z"), ["5秒前"])
+    XCTAssertEqual(
+      sampleMessages(at: "2026-07-13T00:00:00Z"),
+      ["５分経過", "9時です。3分足にきりかえてください。"]
+    )
+  }
+
   func testUsesThreeMinuteRulesFromNineOClock() {
     XCTAssertEqual(messages(at: "2026-07-13T00:02:00Z"), ["残り1分"])
     XCTAssertEqual(messages(at: "2026-07-13T00:02:30Z"), ["30秒前"])

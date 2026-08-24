@@ -24,6 +24,38 @@
         },
         {
           "when": {
+            "secondsBeforeClose": 60
+          },
+          "speak": {
+            "message": "残り1分"
+          }
+        },
+        {
+          "when": {
+            "secondsBeforeClose": 30
+          },
+          "speak": {
+            "message": "30秒前"
+          }
+        },
+        {
+          "when": {
+            "secondsBeforeClose": 10
+          },
+          "speak": {
+            "message": "10秒前"
+          }
+        },
+        {
+          "when": {
+            "secondsBeforeClose": 5
+          },
+          "speak": {
+            "message": "5秒前"
+          }
+        },
+        {
+          "when": {
             "candleClosed": true
           },
           "speak": {
