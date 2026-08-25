@@ -1,4 +1,5 @@
 .DS_Store
 messages.conf
 config.json
+config.*.json
 .build/
