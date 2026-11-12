@@ -12,7 +12,7 @@ final class ConfigurationTests: XCTestCase {
       from: repositoryRoot.appendingPathComponent("config.json.sample")
     )
 
-    XCTAssertEqual(configuration.fallback?.intervalMinutes, 5)
+    XCTAssertEqual(configuration.fallback?.intervalMinutes, 15)
     XCTAssertEqual(configuration.periods.count, 3)
     XCTAssertEqual(
       configuration.periods.first?.start.secondsSinceMidnight,

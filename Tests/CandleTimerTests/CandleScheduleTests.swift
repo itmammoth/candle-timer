@@ -57,6 +57,80 @@ final class CandleScheduleTests: XCTestCase {
     XCTAssertTrue(messages(at: "2026-07-13T00:06:00Z").contains("ローソク確定"))
   }
 
+  func testSampleFallbackUsesQuarterHourClockTimesOnlyOutsidePeriods() throws {
+    let repositoryRoot = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+    let sampleSchedule = CandleSchedule(
+      configuration: try TimerConfiguration.load(
+        from: repositoryRoot.appendingPathComponent("config.json.sample")
+      )
+    )
+
+    for timestamp in [
+      "2026-07-12T22:00:00Z", "2026-07-12T22:15:00Z",
+      "2026-07-12T22:30:00Z", "2026-07-12T22:45:00Z",
+      "2026-07-13T15:00:00Z"
+    ] {
+      let boundary = unixSecond(timestamp)
+      XCTAssertEqual(sampleSchedule.evaluation(atUnixSecond: boundary).fallback?.isScheduledTime, true)
+      XCTAssertEqual(sampleSchedule.evaluation(atUnixSecond: boundary - 1).fallback?.isScheduledTime, false)
+      XCTAssertEqual(sampleSchedule.evaluation(atUnixSecond: boundary + 1).fallback?.isScheduledTime, false)
+    }
+    XCTAssertEqual(
+      sampleSchedule.evaluation(atUnixSecond: unixSecond("2026-07-12T22:19:00Z"))
+        .fallback?.isScheduledTime,
+      false
+    )
+    XCTAssertNil(
+      sampleSchedule.evaluation(atUnixSecond: unixSecond("2026-07-12T23:45:00Z")).fallback
+    )
+  }
+
+  func testFallbackClockTimesUseConfiguredTimeZone() throws {
+    let configuration = try TimerConfiguration.parse(
+      ConfigurationTests.validConfiguration
+        .replacingOccurrences(of: "Asia/Tokyo", with: "Asia/Kathmandu")
+        .replacingOccurrences(of: "\"intervalMinutes\": 5", with: "\"intervalMinutes\": 60")
+    )
+    let localSchedule = CandleSchedule(configuration: configuration)
+
+    // 07:00 in Kathmandu is 01:15 UTC; 01:00 UTC is 06:45 locally.
+    XCTAssertEqual(
+      localSchedule.evaluation(atUnixSecond: unixSecond("2026-07-13T01:15:00Z"))
+        .fallback?.isScheduledTime,
+      true
+    )
+    XCTAssertEqual(
+      localSchedule.evaluation(atUnixSecond: unixSecond("2026-07-13T01:00:00Z"))
+        .fallback?.isScheduledTime,
+      false
+    )
+  }
+
+  func testFallbackIntervalsLongerThanAnHourUseMidnightAsOrigin() throws {
+    let configuration = try TimerConfiguration.parse(
+      ConfigurationTests.validConfiguration.replacingOccurrences(
+        of: "\"intervalMinutes\": 5", with: "\"intervalMinutes\": 90"
+      )
+    )
+    let longIntervalSchedule = CandleSchedule(configuration: configuration)
+
+    for (timestamp, isScheduledTime) in [
+      ("2026-07-12T15:00:00Z", true),
+      ("2026-07-12T16:00:00Z", false),
+      ("2026-07-12T16:30:00Z", true),
+      ("2026-07-12T18:00:00Z", true)
+    ] {
+      XCTAssertEqual(
+        longIntervalSchedule.evaluation(atUnixSecond: unixSecond(timestamp))
+          .fallback?.isScheduledTime,
+        isScheduledTime
+      )
+    }
+  }
+
   func testTreatsTenThirtyAsRegularCandleClose() {
     XCTAssertEqual(
       messages(at: "2026-07-13T01:30:00Z"),
@@ -97,7 +171,7 @@ final class CandleScheduleTests: XCTestCase {
     XCTAssertEqual(beforeOpen.fallback?.message, "市場がクローズしています")
     XCTAssertNil(duringMarket.fallback)
     XCTAssertEqual(atClose.announcements.map(\.message), ["ローソク確定"])
-    XCTAssertEqual(atClose.fallback?.intervalSeconds, 300)
+    XCTAssertEqual(atClose.fallback?.isScheduledTime, true)
   }
 
   func testAllowsSilentGapBetweenPeriods() throws {

@@ -6,7 +6,7 @@ struct Announcement: Equatable {
 }
 
 struct FallbackAnnouncement: Equatable {
-  let intervalSeconds: Int
+  let isScheduledTime: Bool
   let message: String
 }
 
@@ -17,7 +17,7 @@ struct ScheduleEvaluation: Equatable {
 
 struct CandleSchedule {
   private let timeZone: TimeZone
-  private let fallback: FallbackAnnouncement?
+  private let fallback: FallbackConfiguration?
   private let periods: [ScheduledPeriod]
 
   init(configuration: TimerConfiguration) {
@@ -27,10 +27,7 @@ struct CandleSchedule {
         return nil
       }
 
-      return FallbackAnnouncement(
-        intervalSeconds: fallback.intervalSeconds,
-        message: fallback.speak.message
-      )
+      return fallback
     }
     periods = configuration.periods.map { period in
       ScheduledPeriod(
@@ -93,7 +90,12 @@ struct CandleSchedule {
 
     return ScheduleEvaluation(
       announcements: matches.sorted().map(\.announcement),
-      fallback: isWithinPeriod ? nil : fallback
+      fallback: isWithinPeriod ? nil : fallback.map { fallback in
+        FallbackAnnouncement(
+          isScheduledTime: secondOfDay % fallback.intervalSeconds == 0,
+          message: fallback.speak.message
+        )
+      }
     )
   }
 }

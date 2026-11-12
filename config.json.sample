@@ -1,7 +1,7 @@
 {
   "timeZone": "Asia/Tokyo",
   "fallback": {
-    "intervalMinutes": 5,
+    "intervalMinutes": 15,
     "speak": {
       "message": "市場がクローズしています"
     }
